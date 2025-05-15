@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Target Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .game-container {
+            width: 800px;
+            height: 600px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .target {
+            width: 50px;
+            height: 50px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .target:hover {
+            transform: scale(1.1);
+        }
+        .score-container {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .timer {
+            margin-top: 10px;
+            font-size: 20px;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Target Game</h1>
+    <div class="game-container" id="gameContainer">
+        <!-- Targets will be added dynamically -->
+    </div>
+    <div class="score-container">
+        Score: <span id="score">0</span>
+    </div>
+    <div class="timer">
+        Time: <span id="timer">60</span>s
+    </div>
+    <div class="controls">
+        <button id="startButton">Start Game</button>
+        <button id="pauseButton" disabled>Pause</button>
+        <button id="exitButton">Exit</button>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const exitButton = document.getElementById('exitButton');
+
+        let score = 0;
+        let timeLeft = 60;
+        let gameInterval;
+        let timerInterval;
+        let isPaused = false;
+        let highScore = localStorage.getItem('targetGameHighScore') || 0;
+
+        function createTarget() {
+            const target = document.createElement('div');
+            target.className = 'target';
+            
+            // Random position within game container
+            const maxX = gameContainer.clientWidth - 50;
+            const maxY = gameContainer.clientHeight - 50;
+            const x = Math.floor(Math.random() * maxX);
+            const y = Math.floor(Math.random() * maxY);
+            
+            target.style.left = `${x}px`;
+            target.style.top = `${y}px`;
+            
+            // Random size between 30px and 70px
+            const size = Math.floor(Math.random() * 40) + 30;
+            target.style.width = `${size}px`;
+            target.style.height = `${size}px`;
+            
+            // Different colors for different point values
+            const colors = {
+                '#ff4444': 10,  // Red - 10 points
+                '#44ff44': 20,  // Green - 20 points
+                '#4444ff': 30   // Blue - 30 points
+            };
+            const colorKeys = Object.keys(colors);
+            const randomColor = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+            target.style.backgroundColor = randomColor;
+            target.dataset.points = colors[randomColor];
+            
+            target.addEventListener('click', () => {
+                if (!isPaused) {
+                    score += parseInt(target.dataset.points);
+                    scoreElement.textContent = score;
+                    target.remove();
+                }
+            });
+            
+            gameContainer.appendChild(target);
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 60;
+            scoreElement.textContent = score;
+            timerElement.textContent = timeLeft;
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            isPaused = false;
+            
+            // Clear any existing targets
+            gameContainer.innerHTML = '';
+            
+            // Create new targets every second
+            gameInterval = setInterval(createTarget, 1000);
+            
+            // Update timer every second
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('targetGameHighScore', highScore);
+                alert(`New High Score: ${highScore}!`);
+            } else {
+                alert(`Game Over! Score: ${score}\nHigh Score: ${highScore}`);
+            }
+        }
+
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+        exitButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to exit?')) {
+                window.location.href = '../index.html';
+            }
+        });
+    </script>
+</body>
+</html> 
